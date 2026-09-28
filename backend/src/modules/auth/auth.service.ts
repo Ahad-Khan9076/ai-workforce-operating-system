@@ -18,6 +18,12 @@ import { RefreshTokenService } from './refresh-token.service.js';
 import { AuthTokenService } from './auth-token.service.js';
 import { RbacService } from '../rbac/rbac.service.js';
 import { MailService } from '../notifications/mail.service.js';
+import { AuditService } from '../audit/audit.service.js';
+
+export interface AuthAuditContext {
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 export interface AuthTokensResponse {
   accessToken: string;
@@ -47,6 +53,7 @@ export class AuthService {
     private readonly authTokenService: AuthTokenService,
     private readonly rbacService: RbacService,
     private readonly mailService: MailService,
+    private readonly auditService: AuditService,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthTokensResponse> {
@@ -86,7 +93,10 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto): Promise<AuthTokensResponse> {
+  async login(
+    dto: LoginDto,
+    auditContext?: AuthAuditContext,
+  ): Promise<AuthTokensResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
@@ -101,8 +111,20 @@ export class AuthService {
     }
 
     const refresh = await this.refreshTokenService.issue(user.id);
+    const session = await this.buildSessionForUser(user.id);
+
+    await this.auditService.log({
+      actorUserId: user.id,
+      organizationId: session.organizationId,
+      action: 'auth.login',
+      resourceType: 'user',
+      resourceId: user.id,
+      ipAddress: auditContext?.ipAddress,
+      userAgent: auditContext?.userAgent,
+    });
+
     return {
-      ...(await this.buildSessionForUser(user.id)),
+      ...session,
       refreshToken: refresh.token,
     };
   }
@@ -115,12 +137,24 @@ export class AuthService {
     };
   }
 
-  async logout(refreshToken?: string, userId?: string) {
+  async logout(
+    refreshToken?: string,
+    userId?: string,
+    auditContext?: AuthAuditContext,
+  ) {
     if (refreshToken) {
       await this.refreshTokenService.revoke(refreshToken);
     }
     if (userId) {
       await this.refreshTokenService.revokeAllForUser(userId);
+      await this.auditService.log({
+        actorUserId: userId,
+        action: 'auth.logout',
+        resourceType: 'user',
+        resourceId: userId,
+        ipAddress: auditContext?.ipAddress,
+        userAgent: auditContext?.userAgent,
+      });
     }
   }
 

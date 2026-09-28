@@ -291,6 +291,83 @@ enum AiActionStatus {
   FAILED
 }
 
+enum RecommendationType {
+  ATTENDANCE
+  PAYROLL
+  PERFORMANCE
+  TRAINING
+  SKILLS
+  RECRUITMENT
+  WORKFORCE
+}
+
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RecommendationStatus {
+  OPEN
+  APPROVED
+  DISMISSED
+  EXECUTED
+  EXPIRED
+}
+
+enum RecommendationActionStatus {
+  PENDING
+  APPROVED
+  DISMISSED
+  COMPLETED
+  FAILED
+}
+
+enum AutomationActorType {
+  USER
+  SYSTEM
+  AI
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+  SMS
+}
+
+enum NotificationDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum UsageMetricCode {
+  ACTIVE_EMPLOYEES
+  RECRUITMENT_CANDIDATES
+  AI_REQUESTS
+  STORAGE_BYTES
+  TRAINING_USERS
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
@@ -311,6 +388,9 @@ model User {
   uploadedEmployeeDocs    EmployeeDocument[]       @relation("DocumentUploader")
   createdTimelineEvents   EmployeeTimelineEvent[]  @relation("TimelineCreator")
   aiConversations         AiConversation[]
+  notifications           Notification[]
+  recommendationFeedbacks RecommendationFeedback[]
+  recommendationActionsResolved RecommendationAction[] @relation("RecommendationActionResolver")
 
   @@map("users")
 }
@@ -328,6 +408,7 @@ model Organization {
   timezone       String   @default("UTC")
   currency       String   @default("USD")
   primaryContact String?
+  settings       Json     @default("{}")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -399,6 +480,16 @@ model Organization {
   aiRecommendations        AiRecommendation[]
   aiActions                AiAction[]
   aiAuditLogs              AiAuditLog[]
+  recommendationRules      RecommendationRule[]
+  recommendations          Recommendation[]
+  recommendationActions    RecommendationAction[]
+  recommendationFeedbacks  RecommendationFeedback[]
+  automationRules          AutomationRule[]
+  automationAuditLogs      AutomationAuditLog[]
+  notifications            Notification[]
+  subscriptions            Subscription[]
+  usageRecords               UsageRecord[]
+  invoices                   Invoice[]
 
   @@map("organizations")
 }
@@ -479,6 +570,7 @@ model Department {
   trainingAssignments TrainingAssignment[]
   workforceRisks      WorkforceRisk[]
   workforceInsights   WorkforceInsight[]
+  recommendations     Recommendation[]
 
   @@unique([organizationId, code])
   @@index([organizationId, name])
@@ -1917,9 +2009,99 @@ model OrganizationInvitation {
   @@map("organization_invitations")
 }
 
+model Plan {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  limits      Json
+  priceCents  Int      @default(0)
+  currency    String   @default("USD")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions Subscription[]
+  items         SubscriptionItem[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  organizationId     String
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  externalCustomerId String?
+  externalSubscriptionId String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  items        SubscriptionItem[]
+  invoices     Invoice[]
+
+  @@index([organizationId, status])
+  @@map("subscriptions")
+}
+
+model SubscriptionItem {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  planId         String
+  quantity       Int      @default(1)
+  metadata       Json?
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  plan         Plan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@map("subscription_items")
+}
+
+model UsageRecord {
+  id             String          @id @default(cuid())
+  organizationId String
+  metric         UsageMetricCode
+  quantity       Float
+  recordedAt     DateTime        @default(now())
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  metadata       Json?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, metric, recordedAt])
+  @@map("usage_records")
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  organizationId String
+  subscriptionId String?
+  status         InvoiceStatus @default(DRAFT)
+  amountCents    Int
+  currency       String        @default("USD")
+  externalInvoiceId String?
+  issuedAt       DateTime?
+  paidAt         DateTime?
+  lineItems      Json          @default("[]")
+  createdAt      DateTime      @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@map("invoices")
+}
+
 model AuditLog {
   id             String   @id @default(cuid())
-  organizationId String
+  organizationId String?
   actorUserId    String?
   action         String
   resourceType   String
@@ -1929,8 +2111,8 @@ model AuditLog {
   userAgent      String?
   createdAt      DateTime @default(now())
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  actor        User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User?         @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, createdAt])
   @@map("audit_logs")
@@ -2084,4 +2266,168 @@ model AiAuditLog {
 
   @@index([organizationId, createdAt])
   @@map("ai_audit_logs")
+}
+
+model RecommendationRule {
+  id             String             @id @default(cuid())
+  organizationId String?
+  code           String
+  type           RecommendationType
+  name           String
+  description    String
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recommendations Recommendation[]
+
+  @@unique([code, organizationId])
+  @@map("recommendation_rules")
+}
+
+model Recommendation {
+  id                String                 @id @default(cuid())
+  organizationId    String
+  ruleId            String?
+  ruleCode          String
+  type              RecommendationType
+  status            RecommendationStatus   @default(OPEN)
+  priority          RecommendationPriority @default(MEDIUM)
+  title             String
+  whatHappened      String
+  evidence          Json
+  whyItMatters      String
+  recommendedAction String
+  confidenceScore   Float?
+  confidenceNote    String?
+  dedupeKey         String
+  departmentId      String?
+  expiresAt         DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rule         RecommendationRule?     @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  department   Department?             @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  actions      RecommendationAction[]
+  feedback     RecommendationFeedback[]
+
+  @@unique([organizationId, ruleCode, dedupeKey])
+  @@index([organizationId, status, priority])
+  @@map("recommendations")
+}
+
+model RecommendationAction {
+  id               String                     @id @default(cuid())
+  organizationId   String
+  recommendationId String
+  status           RecommendationActionStatus @default(PENDING)
+  title            String
+  description      String
+  source           String
+  priority         RecommendationPriority     @default(MEDIUM)
+  recommendedAction String
+  resolvedByUserId String?
+  resolvedAt       DateTime?
+  result           Json?
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  resolvedBy     User?          @relation("RecommendationActionResolver", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@map("recommendation_actions")
+}
+
+model RecommendationFeedback {
+  id               String   @id @default(cuid())
+  organizationId   String
+  recommendationId String
+  userId           String
+  isHelpful        Boolean
+  comment          String?
+  createdAt        DateTime @default(now())
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([recommendationId, userId])
+  @@map("recommendation_feedbacks")
+}
+
+model AutomationRule {
+  id             String   @id @default(cuid())
+  organizationId String
+  code           String
+  name           String
+  description    String
+  triggerEvent   String
+  actionType     String
+  enabled        Boolean  @default(true)
+  config         Json     @default("{}")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  auditLogs    AutomationAuditLog[]
+
+  @@unique([organizationId, code])
+  @@map("automation_rules")
+}
+
+model AutomationAuditLog {
+  id               String              @id @default(cuid())
+  organizationId   String
+  automationRuleId String?
+  trigger          String
+  ruleCode         String
+  action           String
+  actorType        AutomationActorType
+  actorUserId      String?
+  success          Boolean
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  automationRule AutomationRule? @relation(fields: [automationRuleId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@map("automation_audit_logs")
+}
+
+model Notification {
+  id             String             @id @default(cuid())
+  organizationId String
+  userId         String
+  channel        NotificationChannel
+  title          String
+  body           String
+  readAt         DateTime?
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries   NotificationDelivery[]
+
+  @@index([organizationId, userId, readAt])
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id             String                     @id @default(cuid())
+  notificationId String
+  channel        NotificationChannel
+  status         NotificationDeliveryStatus @default(PENDING)
+  errorMessage   String?
+  attemptedAt    DateTime?
+  createdAt      DateTime                   @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId, channel])
+  @@map("notification_deliveries")
 }

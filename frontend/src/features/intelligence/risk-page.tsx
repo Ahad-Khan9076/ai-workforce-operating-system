@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { LoadingState } from '@/components/loading-state';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -31,7 +32,7 @@ export function RiskCenterPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Workforce risk center"
         description="Rule-based signals with explicit evidence—never opaque HR decisions."
@@ -99,6 +100,6 @@ export function RiskCenterPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

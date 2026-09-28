@@ -25,6 +25,10 @@ import {
   getRefreshTokenFromRequest,
   setRefreshTokenCookie,
 } from './auth-cookie.util.js';
+import {
+  clientIp,
+  clientUserAgent,
+} from '../../common/utils/request-client.util.js';
 
 @Controller('auth')
 export class AuthController {
@@ -55,9 +59,13 @@ export class AuthController {
   @Post('login')
   async login(
     @Body() dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(dto);
+    const result = await this.authService.login(dto, {
+      ipAddress: clientIp(req),
+      userAgent: clientUserAgent(req),
+    });
     this.attachRefreshCookie(res, result.refreshToken);
     const { refreshToken: _, ...body } = result;
     return body;
@@ -90,7 +98,10 @@ export class AuthController {
     const cookieName =
       this.configService.get<string>('auth.refreshCookieName') ?? 'refresh_token';
     const token = getRefreshTokenFromRequest(req, cookieName);
-    await this.authService.logout(token, user.userId);
+    await this.authService.logout(token, user.userId, {
+      ipAddress: clientIp(req),
+      userAgent: clientUserAgent(req),
+    });
     clearRefreshTokenCookie(res, this.configService);
     return { message: 'Logged out' };
   }

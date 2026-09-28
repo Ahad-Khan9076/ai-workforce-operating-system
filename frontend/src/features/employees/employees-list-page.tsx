@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
+import { FilterBar } from '@/components/filter-bar';
+import { ResponsiveTable } from '@/components/responsive-table';
+import { NativeSelect } from '@/components/native-select';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -79,7 +82,7 @@ export function EmployeesListPage() {
     | undefined;
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Employees"
         description="Search, filter, and manage your workforce directory."
@@ -93,21 +96,17 @@ export function EmployeesListPage() {
         }
       />
 
-      <div className="grid gap-3 rounded-xl border bg-card p-4 md:grid-cols-6">
-        <div className="relative md:col-span-2">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            placeholder="Search name, email, employee ID…"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        </div>
-        <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+      <FilterBar
+        searchValue={search}
+        onSearchChange={(value) => {
+          setPage(1);
+          setSearch(value);
+        }}
+        searchPlaceholder="Search name, email, employee ID…"
+      >
+        <NativeSelect
+          className="sm:w-40"
+          aria-label="Filter by department"
           value={departmentId}
           onChange={(e) => {
             setPage(1);
@@ -120,9 +119,10 @@ export function EmployeesListPage() {
               {d.name}
             </option>
           ))}
-        </select>
-        <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        </NativeSelect>
+        <NativeSelect
+          className="sm:w-36"
+          aria-label="Filter by status"
           value={status}
           onChange={(e) => {
             setPage(1);
@@ -135,9 +135,10 @@ export function EmployeesListPage() {
               {s.replace('_', ' ')}
             </option>
           ))}
-        </select>
-        <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        </NativeSelect>
+        <NativeSelect
+          className="sm:w-40"
+          aria-label="Filter by job title"
           value={jobTitleId}
           onChange={(e) => {
             setPage(1);
@@ -150,9 +151,10 @@ export function EmployeesListPage() {
               {jt.title}
             </option>
           ))}
-        </select>
-        <select
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        </NativeSelect>
+        <NativeSelect
+          className="sm:w-40"
+          aria-label="Filter by manager"
           value={managerId}
           onChange={(e) => {
             setPage(1);
@@ -168,8 +170,8 @@ export function EmployeesListPage() {
               {m.firstName} {m.lastName}
             </option>
           ))}
-        </select>
-      </div>
+        </NativeSelect>
+      </FilterBar>
 
       {employeesQuery.isLoading ? <LoadingState label="Loading employees…" /> : null}
       {employeesQuery.isError ? (
@@ -180,17 +182,19 @@ export function EmployeesListPage() {
 
       {data && data.items.length === 0 ? (
         <EmptyState
+          icon={Users}
           title="No employees found"
           description="Adjust filters or add your first employee to get started."
           actionLabel="Add employee"
           onAction={() => {
-            window.location.href = '/employees/new';
+            window.location.assign('/employees/new');
           }}
         />
       ) : null}
 
       {data && data.items.length > 0 ? (
         <>
+          <ResponsiveTable>
           <Table>
             <TableHeader>
               <TableRow>
@@ -226,7 +230,8 @@ export function EmployeesListPage() {
               ))}
             </TableBody>
           </Table>
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
+          </ResponsiveTable>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">
             <span>
               Page {page} of {data.totalPages} · {data.total} employees
             </span>
@@ -251,6 +256,6 @@ export function EmployeesListPage() {
           </div>
         </>
       ) : null}
-    </div>
+    </PageShell>
   );
 }

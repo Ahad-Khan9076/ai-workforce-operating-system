@@ -34,4 +34,17 @@ export default () => ({
     refreshTtlDays: parseInt(process.env.JWT_REFRESH_TTL_DAYS ?? '7', 10),
     invitationTtlDays: parseInt(process.env.INVITATION_TTL_DAYS ?? '7', 10),
   },
+  billing: {
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  },
+  rateLimit: {
+    ttlMs: parseInt(process.env.RATE_LIMIT_TTL_MS ?? '60000', 10),
+    max: parseInt(process.env.RATE_LIMIT_MAX ?? '120', 10),
+  },
+  observability: {
+    sentryDsn: process.env.SENTRY_DSN,
+    logLevel: process.env.LOG_LEVEL ?? 'info',
+  },
 });

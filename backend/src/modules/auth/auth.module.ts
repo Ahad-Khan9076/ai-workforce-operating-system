@@ -7,9 +7,11 @@ import { AuthController } from './auth.controller.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { RefreshTokenService } from './refresh-token.service.js';
 import { AuthTokenService } from './auth-token.service.js';
+import { AuditModule } from '../audit/audit.module.js';
 
 @Module({
   imports: [
+    AuditModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

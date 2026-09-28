@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/loading-state';
@@ -34,7 +35,7 @@ export function DepartmentDetailPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title={department.name}
         description={department.description ?? 'Department overview'}
@@ -64,6 +65,6 @@ export function DepartmentDetailPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

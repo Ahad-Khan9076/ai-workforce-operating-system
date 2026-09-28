@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { RequireOrganization } from '../../common/decorators/require-organization.decorator.js';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator.js';
 import { PERMISSIONS } from '../../common/constants/permissions.js';
 import type { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface.js';
@@ -10,6 +11,7 @@ export class AuditController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get()
+  @RequireOrganization()
   @RequirePermissions(PERMISSIONS.AUDIT_READ)
   list(
     @CurrentUser() user: AuthenticatedUser,

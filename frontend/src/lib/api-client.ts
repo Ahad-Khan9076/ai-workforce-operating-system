@@ -97,10 +97,15 @@ export async function apiRequest<T>(
       : await response.text();
 
   if (!response.ok) {
-    const message =
+    let message =
       typeof payload === 'object' && payload && 'message' in payload
         ? String((payload as { message: string | string[] }).message)
         : response.statusText;
+
+    if (response.status === 502 || response.status === 503) {
+      message =
+        'API unavailable (Bad Gateway). Start PostgreSQL, then run the backend: cd backend && npm run start:dev';
+    }
 
     throw new ApiError(message, response.status);
   }

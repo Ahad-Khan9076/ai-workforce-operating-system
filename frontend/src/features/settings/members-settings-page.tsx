@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ export function MembersSettingsPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Members"
         description="Manage organization membership and pending invitations."
@@ -178,6 +179,6 @@ export function MembersSettingsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

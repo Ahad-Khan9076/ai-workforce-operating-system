@@ -10,6 +10,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { CreateOrganizationDto } from './dto/create-organization.dto.js';
 import { UpdateOrganizationDto } from './dto/update-organization.dto.js';
 import { AuthService } from '../auth/auth.service.js';
+import { BillingService } from '../billing/billing.service.js';
 
 function slugify(value: string): string {
   return value
@@ -26,6 +27,7 @@ export class OrganizationsService {
     private readonly rbacService: RbacService,
     private readonly auditService: AuditService,
     private readonly authService: AuthService,
+    private readonly billingService: BillingService,
   ) {}
 
   async create(userId: string, dto: CreateOrganizationDto) {
@@ -76,6 +78,8 @@ export class OrganizationsService {
       resourceType: 'organization',
       resourceId: organization.id,
     });
+
+    await this.billingService.assignFreePlan(organization.id);
 
     return this.authService.selectOrganization(userId, organization.id);
   }

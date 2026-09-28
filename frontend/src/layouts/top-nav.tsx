@@ -1,9 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, ChevronRight, Search } from 'lucide-react';
+import { Bell, ChevronRight } from 'lucide-react';
 import { breadcrumbLabels } from '@/lib/navigation';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MobileNav } from '@/components/mobile-nav';
 import { useAuthStore } from '@/stores/auth-store';
 import { logoutRequest } from '@/features/auth/api';
 
@@ -24,7 +23,7 @@ function buildBreadcrumbs(pathname: string) {
   for (const segment of segments) {
     current += `/${segment}`;
     crumbs.push({
-      label: breadcrumbLabels[segment] ?? segment,
+      label: breadcrumbLabels[segment] ?? segment.replace(/-/g, ' '),
       href: current,
     });
   }
@@ -41,21 +40,29 @@ export function TopNav() {
     ? `${session.user.firstName.charAt(0)}${session.user.lastName.charAt(0)}`
     : 'AW';
 
+  const currentTitle = crumbs[crumbs.length - 1]?.label ?? 'Dashboard';
+
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="flex h-16 items-center gap-4 px-4 lg:px-6">
-        <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 md:flex">
-          <ol className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="flex h-16 items-center gap-3 px-4 lg:gap-4 lg:px-6">
+        <MobileNav />
+
+        <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium md:hidden">{currentTitle}</p>
+          <ol className="hidden min-w-0 items-center gap-1 text-sm text-muted-foreground md:flex">
             {crumbs.map((crumb, index) => (
               <li key={crumb.href} className="flex min-w-0 items-center gap-1">
-                {index > 0 ? <ChevronRight className="h-4 w-4 shrink-0" /> : null}
+                {index > 0 ? (
+                  <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />
+                ) : null}
                 <Link
                   to={crumb.href}
                   className={
                     index === crumbs.length - 1
                       ? 'truncate font-medium text-foreground'
-                      : 'truncate hover:text-foreground'
+                      : 'truncate hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
                   }
+                  aria-current={index === crumbs.length - 1 ? 'page' : undefined}
                 >
                   {crumb.label}
                 </Link>
@@ -65,21 +72,13 @@ export function TopNav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <div className="relative hidden w-64 lg:block">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search workforce…" />
-          </div>
-
-          <Button variant="outline" size="icon" aria-label="Notifications">
+          <Button variant="outline" size="icon" aria-label="Notifications (coming soon)" disabled>
             <Bell className="h-4 w-4" />
           </Button>
-          <Badge variant="secondary" className="hidden sm:inline-flex">
-            Phase 0
-          </Badge>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 px-2">
+              <Button variant="ghost" className="gap-2 px-2" aria-label="Account menu">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>

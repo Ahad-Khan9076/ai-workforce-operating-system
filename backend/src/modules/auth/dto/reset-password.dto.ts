@@ -1,10 +1,11 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsString } from 'class-validator';
+import { PasswordPolicy } from '../../../common/validators/password.validator.js';
 
 export class ResetPasswordDto {
   @IsString()
   token!: string;
 
   @IsString()
-  @MinLength(8)
+  @PasswordPolicy()
   password!: string;
 }

@@ -29,6 +29,8 @@ export const PERMISSIONS = {
   AI_USE: 'ai.use',
   SETTINGS_MANAGE: 'settings.manage',
   AUDIT_READ: 'audit.read',
+  BILLING_READ: 'billing.read',
+  BILLING_MANAGE: 'billing.manage',
 } as const;
 
 export type PermissionCode =
@@ -51,7 +53,9 @@ export type RoleCode = (typeof ROLE_CODES)[keyof typeof ROLE_CODES];
 
 export const ROLE_PERMISSION_MAP: Record<RoleCode, PermissionCode[]> = {
   OWNER: [...ALL_PERMISSIONS],
-  HR_ADMIN: ALL_PERMISSIONS.filter((p) => p !== PERMISSIONS.SETTINGS_MANAGE),
+  HR_ADMIN: ALL_PERMISSIONS.filter(
+    (p) => p !== PERMISSIONS.SETTINGS_MANAGE && p !== PERMISSIONS.BILLING_MANAGE,
+  ),
   HR_MANAGER: [
     PERMISSIONS.ORGANIZATION_READ,
     PERMISSIONS.MEMBER_READ,

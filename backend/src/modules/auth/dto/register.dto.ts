@@ -1,4 +1,5 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { PasswordPolicy } from '../../../common/validators/password.validator.js';
 
 export class RegisterDto {
   @IsString()
@@ -13,6 +14,6 @@ export class RegisterDto {
   email!: string;
 
   @IsString()
-  @MinLength(8)
+  @PasswordPolicy()
   password!: string;
 }

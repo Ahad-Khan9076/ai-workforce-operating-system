@@ -18,7 +18,6 @@ import { InviteOnboardingPage } from '@/features/onboarding/invite-onboarding-pa
 import { SettingsPage } from '@/features/settings/settings-page';
 import { MembersSettingsPage } from '@/features/settings/members-settings-page';
 import { RolesSettingsPage } from '@/features/settings/roles-settings-page';
-import { PlaceholderPage } from '@/components/placeholder-page';
 import { EmployeesListPage } from '@/features/employees/employees-list-page';
 import { EmployeeFormPage } from '@/features/employees/employee-form-page';
 import { EmployeeDetailPage } from '@/features/employees/employee-detail-page';
@@ -36,6 +35,9 @@ import { SkillsIntelligencePage } from '@/features/intelligence/skills-page';
 import { WorkforceInsightsPage } from '@/features/intelligence/insights-page';
 import { RiskCenterPage } from '@/features/intelligence/risk-page';
 import { CopilotPage } from '@/features/copilot/copilot-page';
+import { ActionCenterPage } from '@/features/intelligence/action-center-page';
+import { BillingPage } from '@/features/billing/billing-page';
+import { AuditLogsPage } from '@/features/admin/audit-logs-page';
 
 export function AppRoutes() {
   return (
@@ -112,11 +114,12 @@ export function AppRoutes() {
         <Route path="workforce/training" element={<RequireOrganizationRoute><TrainingPage /></RequireOrganizationRoute>} />
         <Route path="workforce/performance" element={<RequireOrganizationRoute><PerformancePage /></RequireOrganizationRoute>} />
         <Route path="workforce/skills" element={<RequireOrganizationRoute><SkillsIntelligencePage /></RequireOrganizationRoute>} />
+        <Route path="intelligence/action-center" element={<RequireOrganizationRoute><ActionCenterPage /></RequireOrganizationRoute>} />
         <Route path="intelligence/insights" element={<RequireOrganizationRoute><WorkforceInsightsPage /></RequireOrganizationRoute>} />
         <Route path="intelligence/risk" element={<RequireOrganizationRoute><RiskCenterPage /></RequireOrganizationRoute>} />
         <Route path="intelligence/copilot" element={<RequireOrganizationRoute><CopilotPage /></RequireOrganizationRoute>} />
-        <Route path="admin/audit-logs" element={<RequireOrganizationRoute><PlaceholderPage title="Audit Logs" description="Review tenant-scoped audit events." /></RequireOrganizationRoute>} />
-        <Route path="admin/billing" element={<RequireOrganizationRoute><PlaceholderPage title="Billing" description="Subscription and invoicing." /></RequireOrganizationRoute>} />
+        <Route path="admin/audit-logs" element={<RequireOrganizationRoute><AuditLogsPage /></RequireOrganizationRoute>} />
+        <Route path="admin/billing" element={<RequireOrganizationRoute><BillingPage /></RequireOrganizationRoute>} />
         <Route path="admin/settings" element={<Navigate to="/settings" replace />} />
         <Route path="admin/roles" element={<Navigate to="/settings/roles" replace />} />
       </Route>

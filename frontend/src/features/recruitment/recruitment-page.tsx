@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,7 +112,7 @@ export function RecruitmentPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Recruitment"
         description="Jobs, candidate pipeline, CV parsing, and AI-assisted screening."
@@ -243,6 +244,6 @@ export function RecruitmentPage() {
           </Alert>
         )}
       </section>
-    </div>
+    </PageShell>
   );
 }

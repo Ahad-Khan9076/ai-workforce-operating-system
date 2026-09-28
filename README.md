@@ -24,6 +24,29 @@ Multi-tenant B2B HR SaaS that combines core workforce operations with **workforc
 | AI | Provider abstraction (`mock` / OpenAI); no direct DB access from the model |
 | Local infra | Docker Compose (PostgreSQL, Redis) |
 
+## Phase 10 — Production SaaS
+
+- **Billing**: `Plan`, `Subscription`, `SubscriptionItem`, `UsageRecord`, `Invoice`; API `/billing/*`; plans loaded from API (no hard-coded prices in UI); Stripe-ready `PaymentProvider`
+- **Usage**: Active employees, candidates, AI requests, storage, training users — `/billing/usage`
+- **Settings**: Organization JSON settings (AI, notifications, integrations) — `/settings/*`; hub at `/settings`
+- **Audit**: Central `AuditLog`; UI `/admin/audit-logs`; auth login/logout, leave approval, billing events
+- **Security**: Rate limiting, Helmet + security headers, password policy, CORS allowlist
+- **Deploy**: `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.prod.yml`, docs in `docs/`
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/API.md](docs/API.md).
+
+## Phase 9 — Proactive recommendations & automation
+
+- **Models**: `Recommendation`, `RecommendationRule`, `RecommendationAction`, `RecommendationFeedback`, `AutomationRule`, `AutomationAuditLog`, in-app `Notification` + delivery rows (push/SMS hooks skipped until providers exist)
+- **Engine**: rule-based proactive scan (attendance overtime, training overdue, skill gaps, recruitment matches, certificate expiry) with evidence, confidence notes, dedupe keys
+- **Action center**: `/intelligence/action-center` — needs attention / recommended / recently completed; approve & dismiss
+- **Automations**: configurable per org (training overdue, leave submitted → manager, certificate expiry); audited with actor `USER` | `SYSTEM` | `AI`
+- **Notifications**: in-app + email via existing mail logger; `NotificationDelivery` records for future push/SMS
+
+```bash
+cd backend && npm run db:migrate
+```
+
 ## Quick start
 
 ### Prerequisites
@@ -49,6 +72,15 @@ npm run db:seed
 npm run start:dev
 ```
 
+**Demo login** (after seed, dev only):
+
+| Field | Value |
+| --- | --- |
+| Email | `demo@hrworkforce.local` |
+| Password | `DemoOwner1` |
+
+Owner role on **Demo Workforce Co** — billing, audit, copilot, and all modules. Override with `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` in `backend/.env`.
+
 API: `http://localhost:3000/api/v1` · Health: `GET /api/v1/health`
 
 ### 3. Frontend
@@ -61,6 +93,18 @@ npm run dev
 ```
 
 App: `http://localhost:5173` (Vite proxies `/api` to the backend)
+
+**502 Bad Gateway?** The UI is up but the API is not. Start PostgreSQL, then the backend.
+
+**No Docker?** In a separate terminal:
+
+```bash
+cd backend && npm run db:local
+```
+
+Leave that running, then in another terminal: `npm run db:migrate && npm run db:seed && npm run start:dev`.
+
+Quick check: `curl http://localhost:3000/api/v1/health` should return JSON.
 
 ### Optional: OpenAI copilot
 
@@ -85,7 +129,9 @@ hr_project/
 - `/employees`, `/departments`, `/organization`
 - `/workforce/attendance`, `/workforce/leave`, `/workforce/payroll`, `/workforce/training`, `/workforce/performance`, `/workforce/skills`
 - `/recruitment/jobs`, `/recruitment/candidates`
-- `/intelligence/insights`, `/intelligence/risk`, `/intelligence/copilot`
+- `/intelligence/insights`, `/intelligence/risk`, `/intelligence/copilot`, `/intelligence/action-center`
+- `/settings`, `/settings/members`, `/settings/roles`
+- `/admin/billing`, `/admin/audit-logs`
 
 ## Quality checks
 

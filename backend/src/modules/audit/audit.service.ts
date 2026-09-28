@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service.js';
 
 export interface AuditLogInput {
-  organizationId: string;
+  organizationId?: string;
   actorUserId?: string;
   action: string;
   resourceType: string;

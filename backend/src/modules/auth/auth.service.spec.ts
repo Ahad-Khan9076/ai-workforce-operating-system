@@ -46,6 +46,7 @@ describe('AuthService', () => {
         getPermissionsForRole: vi.fn().mockResolvedValue(['organization.read']),
       } as unknown as RbacService,
       { send: vi.fn() } as unknown as MailService,
+      { log: vi.fn() } as never,
     );
   });
 

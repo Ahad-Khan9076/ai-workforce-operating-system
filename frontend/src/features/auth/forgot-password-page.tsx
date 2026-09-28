@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthLayout } from '@/components/auth-layout';
+import { FormFieldError } from '@/components/form-field-error';
 import { forgotPasswordRequest } from '@/features/auth/api';
 import { getErrorMessage } from '@/lib/errors';
 
-const schema = z.object({ email: z.string().email() });
+const schema = z.object({ email: z.string().email('Enter a valid email') });
 
 export function ForgotPasswordPage() {
   const form = useForm<z.infer<typeof schema>>({
@@ -22,44 +23,41 @@ export function ForgotPasswordPage() {
   const mutation = useMutation({ mutationFn: (email: string) => forgotPasswordRequest(email) });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Forgot password</CardTitle>
-          <CardDescription>We will email you a secure reset link if the account exists.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {mutation.isSuccess ? (
-            <Alert>
-              <AlertTitle>Check your inbox</AlertTitle>
-              <AlertDescription>{mutation.data.message}</AlertDescription>
+    <AuthLayout
+      title="Forgot password"
+      description="We will email you a secure reset link if the account exists."
+      footer={
+        <Link className="text-primary hover:underline" to="/login">
+          Back to sign in
+        </Link>
+      }
+    >
+      {mutation.isSuccess ? (
+        <Alert>
+          <AlertTitle>Check your inbox</AlertTitle>
+          <AlertDescription>{mutation.data.message}</AlertDescription>
+        </Alert>
+      ) : (
+        <form
+          className="space-y-4"
+          onSubmit={form.handleSubmit((v) => mutation.mutate(v.email))}
+          noValidate
+        >
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
+            <FormFieldError message={form.formState.errors.email?.message} />
+          </div>
+          {mutation.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{getErrorMessage(mutation.error)}</AlertDescription>
             </Alert>
-          ) : (
-            <form
-              className="space-y-4"
-              onSubmit={form.handleSubmit((v) => mutation.mutate(v.email))}
-            >
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" {...form.register('email')} />
-              </div>
-              {mutation.isError ? (
-                <Alert variant="destructive">
-                  <AlertDescription>{getErrorMessage(mutation.error)}</AlertDescription>
-                </Alert>
-              ) : null}
-              <Button className="w-full" type="submit" disabled={mutation.isPending}>
-                Send reset link
-              </Button>
-            </form>
-          )}
-          <p className="mt-6 text-center text-sm">
-            <Link to="/login" className="text-primary hover:underline">
-              Back to sign in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+          ) : null}
+          <Button className="w-full" type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? 'Sending…' : 'Send reset link'}
+          </Button>
+        </form>
+      )}
+    </AuthLayout>
   );
 }

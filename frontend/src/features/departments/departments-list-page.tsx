@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ export function DepartmentsListPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Departments"
         description="Organize your workforce into departments and reporting lines."
@@ -86,6 +87,6 @@ export function DepartmentsListPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,16 @@ import { LoadingState } from '@/components/loading-state';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { fetchCurrentOrganization, updateOrganizationRequest } from '@/features/organization/api';
 import { getErrorMessage } from '@/lib/errors';
+import { Link } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { fetchOrganizationSettings, patchOrganizationSettings } from '@/features/settings/settings-api';
+
+const settingsLinks = [
+  { href: '/settings/members', label: 'Members & invitations' },
+  { href: '/settings/roles', label: 'Roles & permissions' },
+  { href: '/admin/billing', label: 'Billing & usage' },
+  { href: '/admin/audit-logs', label: 'Audit logs' },
+];
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
@@ -16,9 +27,19 @@ export function SettingsPage() {
     queryFn: fetchCurrentOrganization,
   });
 
+  const orgSettingsQuery = useQuery({
+    queryKey: ['settings', 'organization'],
+    queryFn: fetchOrganizationSettings,
+  });
+
   const mutation = useMutation({
     mutationFn: updateOrganizationRequest,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['organization', 'current'] }),
+  });
+
+  const prefsMutation = useMutation({
+    mutationFn: patchOrganizationSettings,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['settings', 'organization'] }),
   });
 
   if (orgQuery.isLoading) {
@@ -36,11 +57,28 @@ export function SettingsPage() {
   const org = orgQuery.data as Record<string, string | null>;
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Settings"
-        description="Manage your organization profile and tenant preferences."
+        description="Organization profile, security, billing, AI, and integrations."
       />
+      <div className="flex flex-wrap gap-2">
+        {settingsLinks.map((item) => (
+          <Link
+            key={item.href}
+            to={item.href}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+      <Tabs defaultValue="organization">
+        <TabsList>
+          <TabsTrigger value="organization">Organization</TabsTrigger>
+          <TabsTrigger value="preferences">Notifications & AI</TabsTrigger>
+        </TabsList>
+        <TabsContent value="organization">
       <Card>
         <CardHeader>
           <CardTitle>Organization</CardTitle>
@@ -89,6 +127,68 @@ export function SettingsPage() {
           </form>
         </CardContent>
       </Card>
-    </div>
+        </TabsContent>
+        <TabsContent value="preferences">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tenant preferences</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {orgSettingsQuery.isLoading ? (
+                <LoadingState label="Loading preferences…" />
+              ) : (
+                <form
+                  className="space-y-4 max-w-xl"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    prefsMutation.mutate({
+                      ai: { copilotEnabled: formData.get('copilotEnabled') === 'on' },
+                      notifications: {
+                        emailDigest: formData.get('emailDigest') === 'on',
+                      },
+                    });
+                  }}
+                >
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="copilotEnabled"
+                      defaultChecked={
+                        (orgSettingsQuery.data?.ai as { copilotEnabled?: boolean } | undefined)
+                          ?.copilotEnabled !== false
+                      }
+                    />
+                    Enable AI copilot for this organization
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="emailDigest"
+                      defaultChecked={
+                        (
+                          orgSettingsQuery.data?.notifications as
+                            | { emailDigest?: boolean }
+                            | undefined
+                        )?.emailDigest === true
+                      }
+                    />
+                    Weekly email digest for admins
+                  </label>
+                  {prefsMutation.isError ? (
+                    <Alert variant="destructive">
+                      <AlertDescription>{getErrorMessage(prefsMutation.error)}</AlertDescription>
+                    </Alert>
+                  ) : null}
+                  <Button type="submit" disabled={prefsMutation.isPending}>
+                    Save preferences
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </PageShell>
   );
 }

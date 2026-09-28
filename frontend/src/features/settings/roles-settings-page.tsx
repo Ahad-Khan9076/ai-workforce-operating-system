@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ export function RolesSettingsPage() {
   const rolesQuery = useQuery({ queryKey: ['roles'], queryFn: fetchRolesRequest });
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Roles & permissions"
         description="System roles and granular permissions enforced on every tenant API request."
@@ -41,6 +42,6 @@ export function RolesSettingsPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { LoadingState } from '@/components/loading-state';
 import { apiRequest } from '@/lib/api-client';
@@ -26,7 +27,7 @@ export function PerformancePage() {
   if (dashboardQuery.isLoading) return <LoadingState label="Loading performance…" />;
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader title="Performance" description="Cycles, goals, reviews, and development insights." />
       {dashboard && (
         <section className="grid gap-4 md:grid-cols-3">
@@ -46,6 +47,6 @@ export function PerformancePage() {
           ))}
         </ul>
       </section>
-    </div>
+    </PageShell>
   );
 }

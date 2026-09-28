@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { LoadingState } from '@/components/loading-state';
 import { apiRequest } from '@/lib/api-client';
@@ -27,7 +28,7 @@ export function TrainingPage() {
   if (dashboardQuery.isLoading) return <LoadingState label="Loading training…" />;
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader title="Training" description="Courses, learning paths, assessments, and certificates." />
       {dashboard && (
         <section className="grid gap-4 md:grid-cols-4">
@@ -48,6 +49,6 @@ export function TrainingPage() {
           ))}
         </ul>
       </section>
-    </div>
+    </PageShell>
   );
 }

@@ -1,3 +1,5 @@
+import type { LucideIcon } from 'lucide-react';
+
 export type RoleCode =
   | 'OWNER'
   | 'HR_ADMIN'
@@ -37,6 +39,7 @@ export interface AuthSession {
 export interface NavItem {
   title: string;
   href: string;
+  icon?: LucideIcon;
 }
 
 export interface NavSection {

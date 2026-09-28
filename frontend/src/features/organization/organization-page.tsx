@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/loading-state';
@@ -30,7 +31,7 @@ export function OrganizationPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Organization"
         description="Tenant hierarchy: departments, teams, titles, and positions."
@@ -78,6 +79,6 @@ export function OrganizationPage() {
           ))}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

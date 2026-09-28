@@ -33,6 +33,10 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { WorkforceModule } from './modules/workforce/workforce.module.js';
 import { OnboardingModule } from './modules/onboarding/onboarding.module.js';
 import { IntelligenceModule } from './modules/intelligence/intelligence.module.js';
+import { ProactiveModule } from './modules/proactive/proactive.module.js';
+import { BillingModule } from './modules/billing/billing.module.js';
+import { SettingsModule } from './modules/settings/settings.module.js';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -60,16 +64,29 @@ import { IntelligenceModule } from './modules/intelligence/intelligence.module.j
     PerformanceModule,
     AnalyticsModule,
     IntelligenceModule,
+    ProactiveModule,
     AiModule,
     NotificationsModule,
     DocumentsModule,
     AuditModule,
+    BillingModule,
+    SettingsModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: parseInt(process.env.RATE_LIMIT_TTL_MS ?? '60000', 10),
+        limit: parseInt(process.env.RATE_LIMIT_MAX ?? '120', 10),
+      },
+    ]),
   ],
   controllers: [HealthController],
   providers: [
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     {
       provide: APP_GUARD,

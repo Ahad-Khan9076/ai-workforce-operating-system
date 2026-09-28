@@ -2,10 +2,14 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module.js';
+import { securityHeadersMiddleware } from './common/security/security-headers.middleware.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(securityHeadersMiddleware);
   app.use(cookieParser());
   const configService = app.get(ConfigService);
 

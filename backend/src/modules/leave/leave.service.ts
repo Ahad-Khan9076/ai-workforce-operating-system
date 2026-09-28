@@ -14,6 +14,9 @@ import {
 } from '../workforce/workforce-date.util.js';
 import { notFoundInTenant } from '../../common/utils/tenant.util.js';
 import { PERMISSIONS } from '../../common/constants/permissions.js';
+import { AutomationActorType } from '@prisma/client';
+import { AutomationEngineService } from '../proactive/automation/automation-engine.service.js';
+import { AuditService } from '../audit/audit.service.js';
 
 const DEFAULT_LEAVE_TYPES = [
   { code: 'ANNUAL', name: 'Annual', isPaid: true, defaultAnnualDays: 20 },
@@ -28,6 +31,8 @@ export class LeaveService {
     private readonly prisma: PrismaService,
     private readonly scope: EmployeeScopeService,
     private readonly attendance: AttendanceService,
+    private readonly automation: AutomationEngineService,
+    private readonly auditService: AuditService,
   ) {}
 
   async ensureCatalog(organizationId: string) {
@@ -214,6 +219,18 @@ export class LeaveService {
       return created;
     });
 
+    await this.automation.handleEvent(
+      organizationId,
+      'LEAVE_SUBMITTED',
+      {
+        employeeId,
+        requestId: request.id,
+        title: 'Leave request submitted',
+        body: `${request.employee.firstName} ${request.employee.lastName} submitted ${leaveType.name} leave (${data.startDate} – ${data.endDate}).`,
+      },
+      { type: AutomationActorType.SYSTEM, userId: user.userId },
+    );
+
     return request;
   }
 
@@ -318,12 +335,21 @@ export class LeaveService {
     await this.scope.assertCanAccessEmployee(user, request.employeeId);
 
     if (!approve) {
-      return this.releasePendingAndUpdateStatus(
+      const rejected = await this.releasePendingAndUpdateStatus(
         request,
         LeaveRequestStatus.REJECTED,
         user.userId,
         note,
       );
+      await this.auditService.log({
+        organizationId,
+        actorUserId: user.userId,
+        action: 'leave.rejected',
+        resourceType: 'leave_request',
+        resourceId: requestId,
+        metadata: { note },
+      });
+      return rejected;
     }
 
     const year = request.startDate.getUTCFullYear();
@@ -362,6 +388,15 @@ export class LeaveService {
       request.startDate,
       request.endDate,
     );
+
+    await this.auditService.log({
+      organizationId,
+      actorUserId: user.userId,
+      action: 'leave.approved',
+      resourceType: 'leave_request',
+      resourceId: requestId,
+      metadata: { note },
+    });
 
     return updated;
   }

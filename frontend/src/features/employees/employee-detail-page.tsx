@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -106,7 +107,7 @@ export function EmployeeDetailPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title={`${employee.firstName} ${employee.lastName}`}
         description={`${employee.jobTitle?.title ?? 'Employee'} · ${employee.employeeNumber}`}
@@ -231,6 +232,6 @@ export function EmployeeDetailPage() {
           </ul>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageShell>
   );
 }

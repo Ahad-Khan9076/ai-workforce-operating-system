@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +96,7 @@ export function PayrollPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Payroll"
         description="Modular calculation engine, approvals, and payslips."
@@ -198,6 +199,6 @@ export function PayrollPage() {
           </TableBody>
         </Table>
       </section>
-    </div>
+    </PageShell>
   );
 }

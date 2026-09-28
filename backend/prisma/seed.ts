@@ -4,6 +4,8 @@ import {
   ROLE_CODES,
   ROLE_PERMISSION_MAP,
 } from '../src/common/constants/permissions.js';
+import { DEFAULT_PLANS } from '../src/modules/billing/billing.service.js';
+import { seedDemoUser } from './seed-demo.js';
 
 const ROLE_NAMES: Record<string, string> = {
   OWNER: 'Owner',
@@ -69,6 +71,28 @@ async function main() {
       });
     }
   }
+
+  for (const p of DEFAULT_PLANS) {
+    await prisma.plan.upsert({
+      where: { code: p.code },
+      create: {
+        code: p.code,
+        name: p.name,
+        description: p.description,
+        priceCents: p.priceCents,
+        sortOrder: p.sortOrder,
+        limits: p.limits,
+      },
+      update: {
+        name: p.name,
+        description: p.description,
+        priceCents: p.priceCents,
+        limits: p.limits,
+      },
+    });
+  }
+
+  await seedDemoUser(prisma);
 }
 
 main()

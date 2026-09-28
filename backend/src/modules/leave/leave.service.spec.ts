@@ -33,6 +33,7 @@ describe('LeaveService balance workflow', () => {
     getAccessibleEmployeeFilter: vi.fn(),
   };
   const attendance = { markOnLeaveForRange: vi.fn() };
+  const automation = { handleEvent: vi.fn() };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,6 +41,8 @@ describe('LeaveService balance workflow', () => {
       prisma as never,
       scope as never,
       attendance as never,
+      automation as never,
+      { log: vi.fn() } as never,
     );
     prisma.leaveType.upsert.mockImplementation(async ({ create }) => ({
       id: `type-${create.code}`,

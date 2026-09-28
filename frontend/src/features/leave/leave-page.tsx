@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,7 +96,7 @@ export function LeavePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Leave"
         description="Balances, requests, and approvals."
@@ -211,6 +212,6 @@ export function LeavePage() {
           </TableBody>
         </Table>
       </section>
-    </div>
+    </PageShell>
   );
 }

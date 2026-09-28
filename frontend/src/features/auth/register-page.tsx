@@ -7,16 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuthLayout } from '@/components/auth-layout';
+import { FormFieldError } from '@/components/form-field-error';
 import { registerRequest } from '@/features/auth/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { getErrorMessage } from '@/lib/errors';
 
 const registerSchema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
+  firstName: z.string().min(2, 'At least 2 characters'),
+  lastName: z.string().min(2, 'At least 2 characters'),
+  email: z.string().email('Enter a valid email'),
+  password: z
+    .string()
+    .min(8, 'At least 8 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Include upper, lower, and a number'),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -34,60 +38,60 @@ export function RegisterPage() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-10">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle>Create your account</CardTitle>
-          <CardDescription>
-            Register first, then create your organization in onboarding.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="grid gap-4 sm:grid-cols-2"
-            onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" {...form.register('firstName')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" {...form.register('lastName')} />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="email">Work email</Label>
-              <Input id="email" type="email" {...form.register('email')} />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...form.register('password')} />
-            </div>
+    <AuthLayout
+      wide
+      title="Create your account"
+      description="Register first, then create your organization in onboarding."
+      footer={
+        <p>
+          Already have an account?{' '}
+          <Link className="text-primary hover:underline" to="/login">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <form
+        className="grid gap-4 sm:grid-cols-2"
+        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+        noValidate
+      >
+        <div className="space-y-2">
+          <Label htmlFor="firstName">First name</Label>
+          <Input id="firstName" autoComplete="given-name" {...form.register('firstName')} />
+          <FormFieldError message={form.formState.errors.firstName?.message} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="lastName">Last name</Label>
+          <Input id="lastName" autoComplete="family-name" {...form.register('lastName')} />
+          <FormFieldError message={form.formState.errors.lastName?.message} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="email">Work email</Label>
+          <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
+          <FormFieldError message={form.formState.errors.email?.message} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" autoComplete="new-password" {...form.register('password')} />
+          <FormFieldError message={form.formState.errors.password?.message} />
+        </div>
 
-            {mutation.isError ? (
-              <div className="sm:col-span-2">
-                <Alert variant="destructive">
-                  <AlertTitle>Registration failed</AlertTitle>
-                  <AlertDescription>{getErrorMessage(mutation.error)}</AlertDescription>
-                </Alert>
-              </div>
-            ) : null}
+        {mutation.isError ? (
+          <div className="sm:col-span-2">
+            <Alert variant="destructive">
+              <AlertTitle>Registration failed</AlertTitle>
+              <AlertDescription>{getErrorMessage(mutation.error)}</AlertDescription>
+            </Alert>
+          </div>
+        ) : null}
 
-            <div className="sm:col-span-2">
-              <Button className="w-full" type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Creating…' : 'Create account'}
-              </Button>
-            </div>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link className="text-primary hover:underline" to="/login">
-              Sign in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+        <div className="sm:col-span-2">
+          <Button className="w-full" type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? 'Creating…' : 'Create account'}
+          </Button>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }

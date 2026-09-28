@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { LoadingState } from '@/components/loading-state';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -28,7 +29,7 @@ export function WorkforceInsightsPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Workforce insights"
         description="Actionable narratives: what happened, why it matters, and recommended next steps."
@@ -87,6 +88,6 @@ export function WorkforceInsightsPage() {
           </Card>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }

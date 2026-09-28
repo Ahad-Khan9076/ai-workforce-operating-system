@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import { LoadingState } from '@/components/loading-state';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -59,7 +60,7 @@ export function SkillsIntelligencePage() {
   });
 
   return (
-    <div className="space-y-8">
+    <PageShell>
       <PageHeader
         title="Skills intelligence"
         description="Role skill requirements, gap analysis, and internal talent matching."
@@ -184,6 +185,6 @@ export function SkillsIntelligencePage() {
           </ul>
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

@@ -1,70 +1,200 @@
 # AI Workforce Operating System
 
-Multi-tenant B2B HR SaaS that combines core workforce operations with **workforce intelligence** and a **tool-grounded AI copilot**. Built as a production-style monorepo (NestJS API + React SPA).
+![AI Workforce Operating System banner](docs/assets/readme-banner.svg)
 
-## What it does
+[![GitHub](https://img.shields.io/github/stars/Ahad-Khan9076/ai-workforce-operating-system?style=social)](https://github.com/Ahad-Khan9076/ai-workforce-operating-system)
+![Node](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)
+![NestJS](https://img.shields.io/badge/API-NestJS-E0234E?logo=nestjs&logoColor=white)
+![React](https://img.shields.io/badge/UI-React_19-61DAFB?logo=react&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/db-PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![TypeScript](https://img.shields.io/badge/lang-TypeScript-3178C6?logo=typescript&logoColor=white)
 
-| Area | Capabilities |
-| --- | --- |
-| **Core HR** | Organizations, RBAC, employees, departments, documents, skills |
-| **Time & pay** | Shifts, attendance, leave, payroll engine, payslips |
-| **Talent** | Recruitment ATS, CV pipeline, mock AI screening, hire → onboarding |
-| **People development** | LMS, performance cycles, goals, reviews |
-| **Intelligence** | Skill gaps, talent matching, risk rules, actionable insights, role-based dashboards |
-| **AI copilot** | HR / manager / employee modes; read tools + confirmed write actions; audit trail |
+Multi-tenant B2B HR SaaS: core workforce operations, **workforce intelligence**, **proactive recommendations**, and a **tool-grounded AI copilot** — in one production-style monorepo.
 
-**Security model:** tenant scope from JWT (not client `organizationId`); permissions enforced in guards and **again at every copilot tool**.
+**Repository:** [github.com/Ahad-Khan9076/ai-workforce-operating-system](https://github.com/Ahad-Khan9076/ai-workforce-operating-system)
 
-## Tech stack
+---
 
-| Layer | Stack |
-| --- | --- |
-| Frontend | React 19, TypeScript, Vite, Tailwind v4, TanStack Query, Zustand, React Router |
-| Backend | NestJS, Prisma 6, PostgreSQL, JWT + httpOnly refresh |
-| AI | Provider abstraction (`mock` / OpenAI); no direct DB access from the model |
-| Local infra | Docker Compose (PostgreSQL, Redis) |
+## Table of contents
 
-## Phase 10 — Production SaaS
+- [At a glance](#at-a-glance)
+- [Architecture](#architecture)
+- [Intelligence loop](#intelligence-loop)
+- [AI copilot flow](#ai-copilot-flow)
+- [Quick start](#quick-start)
+- [Demo account](#demo-account)
+- [Documentation](#documentation)
+- [Quality checks](#quality-checks)
+- [License](#license)
 
-- **Billing**: `Plan`, `Subscription`, `SubscriptionItem`, `UsageRecord`, `Invoice`; API `/billing/*`; plans loaded from API (no hard-coded prices in UI); Stripe-ready `PaymentProvider`
-- **Usage**: Active employees, candidates, AI requests, storage, training users — `/billing/usage`
-- **Settings**: Organization JSON settings (AI, notifications, integrations) — `/settings/*`; hub at `/settings`
-- **Audit**: Central `AuditLog`; UI `/admin/audit-logs`; auth login/logout, leave approval, billing events
-- **Security**: Rate limiting, Helmet + security headers, password policy, CORS allowlist
-- **Deploy**: `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.prod.yml`, docs in `docs/`
+---
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/API.md](docs/API.md).
+## At a glance
 
-## Phase 9 — Proactive recommendations & automation
-
-- **Models**: `Recommendation`, `RecommendationRule`, `RecommendationAction`, `RecommendationFeedback`, `AutomationRule`, `AutomationAuditLog`, in-app `Notification` + delivery rows (push/SMS hooks skipped until providers exist)
-- **Engine**: rule-based proactive scan (attendance overtime, training overdue, skill gaps, recruitment matches, certificate expiry) with evidence, confidence notes, dedupe keys
-- **Action center**: `/intelligence/action-center` — needs attention / recommended / recently completed; approve & dismiss
-- **Automations**: configurable per org (training overdue, leave submitted → manager, certificate expiry); audited with actor `USER` | `SYSTEM` | `AI`
-- **Notifications**: in-app + email via existing mail logger; `NotificationDelivery` records for future push/SMS
-
-```bash
-cd backend && npm run db:migrate
+```mermaid
+mindmap
+  root((AI Workforce OS))
+    Core HR
+      Employees
+      Departments
+      RBAC
+    Time and pay
+      Attendance
+      Leave
+      Payroll
+    Talent
+      Recruitment ATS
+      Onboarding
+    Development
+      Training LMS
+      Performance
+    Intelligence
+      Skill gaps
+      Risk center
+      Insights
+    Proactive
+      Action center
+      Automations
+    AI
+      Copilot tools
+      Confirmed writes
+    SaaS
+      Billing plans
+      Usage
+      Audit logs
 ```
+
+| Area | What you get |
+| --- | --- |
+| **Core HR** | Orgs, RBAC, employees, departments, documents, skills |
+| **Time & pay** | Shifts, attendance, leave, payroll engine, payslips |
+| **Talent** | Jobs, candidates, pipeline, hire → onboarding |
+| **People development** | LMS, performance cycles, goals, reviews |
+| **Intelligence** | Gaps, talent match, risk rules, role-aware insights |
+| **Proactive** | Recommendations, action center, automations, notifications |
+| **AI copilot** | HR / manager / employee modes; audited tools + confirm-before-write |
+| **SaaS** | Plans, subscriptions, usage, invoices, settings, central audit |
+
+Tenant scope comes from the **JWT**, not client-supplied `organizationId`. Permissions run in API guards and **again on every copilot tool**.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Client
+    SPA[React SPA · Vite]
+  end
+
+  subgraph API["NestJS API"]
+    GW[Guards · JWT · RBAC · Tenant]
+    MOD[Domain modules]
+    AI[AI Copilot · Tools]
+    PRO[Proactive engine]
+    BILL[Billing · Usage]
+  end
+
+  subgraph Data
+    PG[(PostgreSQL)]
+    REDIS[(Redis · future queues)]
+  end
+
+  SPA -->|"/api/v1 · cookies + Bearer"| GW
+  GW --> MOD
+  GW --> AI
+  GW --> PRO
+  GW --> BILL
+  MOD --> PG
+  AI --> MOD
+  PRO --> MOD
+  BILL --> PG
+  MOD -.-> REDIS
+```
+
+```text
+hr_project/
+├── backend/          NestJS · Prisma · migrations · tests
+├── frontend/         React 19 · TanStack Query · shadcn/ui
+├── docs/             Architecture · deploy · security · API · UI
+├── docker-compose.yml          Postgres + Redis (dev)
+└── docker-compose.prod.yml     Full stack (prod)
+```
+
+---
+
+## Intelligence loop
+
+From signal to action — without bypassing humans for risky steps:
+
+```mermaid
+sequenceDiagram
+  participant Data as Workforce data
+  participant Engine as Recommendation engine
+  participant AC as Action Center
+  participant User as Admin / HR
+  participant Auto as Automation engine
+
+  Data->>Engine: Rules scan (attendance, skills, training…)
+  Engine->>AC: Recommendations + evidence
+  User->>AC: Approve or dismiss
+  AC->>Auto: Optional automation (audited)
+  Auto->>Data: Notify · assign · escalate
+```
+
+**UI:** `/intelligence/action-center` · `/intelligence/insights` · `/intelligence/risk`
+
+---
+
+## AI copilot flow
+
+The model never touches the database directly — only **approved tools** behind RBAC:
+
+```mermaid
+flowchart LR
+  U[User message] --> C[Copilot]
+  C --> T{Tool needed?}
+  T -->|Read| R[Execute read tool]
+  T -->|Write| P[Pending AiAction]
+  P --> OK{User confirms?}
+  OK -->|Yes| W[Execute write tool]
+  OK -->|No| X[Reject]
+  R --> A[Audit log]
+  W --> A
+```
+
+**UI:** `/intelligence/copilot` · streaming chat · confirmation cards for writes
+
+---
 
 ## Quick start
 
 ### Prerequisites
 
 - Node.js 20+
-- Docker (recommended)
+- Docker **or** embedded Postgres (no Docker)
 
-### 1. Infrastructure
+### 1. Database
+
+**Docker (recommended):**
 
 ```bash
 docker compose up -d
 ```
 
+**No Docker:**
+
+```bash
+cd backend && npm run db:local
+```
+
+Keep that terminal open (embedded PostgreSQL on `localhost:5432`).
+
 ### 2. Backend
 
 ```bash
 cd backend
-cp .env.example .env   # set DATABASE_URL, JWT_SECRET
+cp .env.example .env
 npm install
 npm run db:generate
 npm run db:migrate
@@ -72,16 +202,8 @@ npm run db:seed
 npm run start:dev
 ```
 
-**Demo login** (after seed, dev only):
-
-| Field | Value |
-| --- | --- |
-| Email | `demo@hrworkforce.local` |
-| Password | `DemoOwner1` |
-
-Owner role on **Demo Workforce Co** — billing, audit, copilot, and all modules. Override with `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` in `backend/.env`.
-
-API: `http://localhost:3000/api/v1` · Health: `GET /api/v1/health`
+- API: `http://localhost:3000/api/v1`
+- Health: `GET /api/v1/health`
 
 ### 3. Frontend
 
@@ -92,46 +214,71 @@ npm install
 npm run dev
 ```
 
-App: `http://localhost:5173` (Vite proxies `/api` to the backend)
+- App: `http://localhost:5173` (Vite proxies `/api` to the backend)
 
-**502 Bad Gateway?** The UI is up but the API is not. Start PostgreSQL, then the backend.
-
-**No Docker?** In a separate terminal:
-
-```bash
-cd backend && npm run db:local
-```
-
-Leave that running, then in another terminal: `npm run db:migrate && npm run db:seed && npm run start:dev`.
-
-Quick check: `curl http://localhost:3000/api/v1/health` should return JSON.
+**502 Bad Gateway?** Start PostgreSQL and the backend. Verify: `curl http://localhost:3000/api/v1/health`
 
 ### Optional: OpenAI copilot
 
 ```bash
 # backend/.env
 OPENAI_API_KEY=sk-...
-AI_PROVIDER=auto   # mock when key is absent
+AI_PROVIDER=auto
 ```
 
-## Repository layout
+---
 
-```text
-hr_project/
-  backend/           NestJS modular monolith, Prisma schema & migrations
-  frontend/          Vite React application shell + feature modules
-  docker-compose.yml PostgreSQL + Redis
-```
+## Demo account
 
-## Main UI routes
+After `npm run db:seed` (development only):
 
-- `/` — Dashboard (workforce + intelligence cards)
-- `/employees`, `/departments`, `/organization`
-- `/workforce/attendance`, `/workforce/leave`, `/workforce/payroll`, `/workforce/training`, `/workforce/performance`, `/workforce/skills`
-- `/recruitment/jobs`, `/recruitment/candidates`
-- `/intelligence/insights`, `/intelligence/risk`, `/intelligence/copilot`, `/intelligence/action-center`
-- `/settings`, `/settings/members`, `/settings/roles`
-- `/admin/billing`, `/admin/audit-logs`
+| Field | Value |
+| --- | --- |
+| Email | `demo@hrworkforce.local` |
+| Password | `DemoOwner1` |
+| Organization | Demo Workforce Co |
+| Role | OWNER (full access) |
+
+Override with `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` in `backend/.env`. Set `SEED_DEMO=false` to skip.
+
+---
+
+## Main routes
+
+| Section | Routes |
+| --- | --- |
+| **Home** | `/` — attention-first dashboard (risks, actions, metrics) |
+| **People** | `/employees`, `/departments`, `/organization` |
+| **Workforce** | `/workforce/attendance`, `/leave`, `/payroll`, `/training`, `/performance`, `/workforce/skills` |
+| **Recruitment** | `/recruitment/jobs`, `/recruitment/candidates` |
+| **Intelligence** | `/intelligence/action-center`, `/insights`, `/risk`, `/copilot` |
+| **Admin** | `/settings`, `/settings/members`, `/settings/roles`, `/admin/billing`, `/admin/audit-logs` |
+
+---
+
+## Documentation
+
+| Doc | Contents |
+| --- | --- |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, tenancy, AI & billing design |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker prod, migrations, env |
+| [SECURITY.md](docs/SECURITY.md) | Auth, headers, rate limits, secrets |
+| [API.md](docs/API.md) | REST overview |
+| [TESTING.md](docs/TESTING.md) | CI-style checks & smoke checklist |
+| [UI.md](docs/UI.md) | Layout, nav, accessibility conventions |
+
+---
+
+## Tech stack
+
+| Layer | Stack |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite, Tailwind v4, TanStack Query, Zustand, shadcn/ui |
+| Backend | NestJS 12, Prisma 6, PostgreSQL, JWT + httpOnly refresh rotation |
+| AI | Provider abstraction (`mock` / OpenAI); tool executor with RBAC |
+| Ops | Docker, rate limiting, Helmet, structured logging hooks |
+
+---
 
 ## Quality checks
 
@@ -140,80 +287,37 @@ cd backend && npm run typecheck && npm run lint && npm run test && npm run build
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
-## Environment variables
-
-See `backend/.env.example` and `frontend/.env.example`. Never commit `.env` files.
-
-Required backend:
-
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `CORS_ORIGINS` (default includes `http://localhost:5173`)
-
-## Architecture notes
-
-### Multi-tenancy
-
-- Tenant-owned data uses `organizationId`.
-- Session carries org context; `TenantGuard` blocks client-supplied tenant overrides.
-
-### RBAC
-
-Roles include `OWNER`, `HR_ADMIN`, `HR_MANAGER`, `DEPARTMENT_MANAGER`, `EMPLOYEE`, `RECRUITER`, `PAYROLL_ADMIN`, `TRAINING_MANAGER`, with granular permission codes (e.g. `employee.read`, `payroll.manage`, `ai.use`).
-
-### Copilot tools
-
-Reads (headcount, employees, attendance, leave, payroll summary, training, performance, skill gaps, risks, hiring) execute immediately after permission checks. Writes (leave, approvals, check-ins, training assign, etc.) create a **pending action** until the user confirms.
-
 ---
 
-## Implementation phases (reference)
+## Implementation phases
 
 <details>
-<summary>Phases 0–8 (expand)</summary>
+<summary>Phases 0–10 (reference)</summary>
 
-### Phase 8 — AI workforce copilot
-
-- `AiConversation`, tools, `AiAction` confirmation, `AiAuditLog`, `/ai/copilot/*`, UI at `/intelligence/copilot`
-
-### Phase 7 — Workforce intelligence
-
-- Skill requirements & gaps, talent matching, risk engine, insights, dashboards — `/intelligence/*`
-
-### Phase 6 — Onboarding, LMS, performance
-
-- Templates, enrollments, certificates, review workflows — `/onboarding/*`, `/training/*`, `/performance/*`
-
-### Phase 5 — Recruitment / ATS
-
-- Jobs, pipeline, mock AI screening, hire flow — `/recruitment/*`
-
-### Phase 4 — Payroll
-
-- Config-driven engine, periods, payslips — `/payroll/*`
-
-### Phase 3 — Attendance & leave
-
-- Shifts, clock in/out, leave balances — `/attendance/*`, `/leave/*`
-
-### Phase 2 — Organization & employees
-
-- Structure, employee profiles, analytics dashboard
-
-### Phase 1 — Auth & tenant foundation
-
-- JWT refresh, org onboarding, invitations, members, roles
-
-### Phase 0 — Foundation
-
-- Monorepo scaffold, shell UI, Prisma base schema, lint/test pipeline
+| Phase | Focus |
+| --- | --- |
+| **10** | SaaS billing, usage, settings, audit, security, Docker, docs |
+| **9** | Proactive recommendations, action center, automations |
+| **8** | AI copilot, tools, confirmation, audit |
+| **7** | Skill gaps, talent match, risk, insights |
+| **6** | Onboarding, LMS, performance |
+| **5** | Recruitment / ATS |
+| **4** | Payroll engine |
+| **3** | Attendance & leave |
+| **2** | Organization & employees |
+| **1** | Auth, tenants, RBAC |
+| **0** | Monorepo scaffold |
 
 </details>
 
+---
+
 ## Product direction
 
-Move from **what happened** → **why it matters** → **recommended action** → **help executing** — with copilots that only act through approved, audited tools.
+**What happened** → **why it matters** → **recommended action** → **help executing** — with copilots that only act through approved, audited tools.
+
+---
 
 ## License
 
-Private / all rights reserved unless you add an open-source license file.
+Private / all rights reserved unless an open-source license file is added.

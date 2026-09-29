@@ -241,6 +241,8 @@ After `npm run db:seed` (development only):
 
 Override with `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` in `backend/.env`. Set `SEED_DEMO=false` to skip.
 
+The same seed loads a **full demo dataset** for org `demo-workforce`: ~13 employees across Engineering, HR, and Sales; pending and approved leave; attendance (including a pending correction); September payroll in review; open jobs with candidates; training enrollments; performance goals; skills gaps; workforce risks and insights; Action Center recommendations; sample billing usage, invoice, and audit logs. Re-running `db:seed` is idempotent for permissions and the demo user; fixture bulk data is inserted once (skipped if the marker job *Senior Backend Engineer (Demo)* already exists). To reload fixtures, reset the dev database (`prisma migrate reset` in `backend/`) or delete that job and related demo rows before seeding again.
+
 ---
 
 ## Main routes

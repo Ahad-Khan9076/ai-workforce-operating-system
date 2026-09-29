@@ -5,6 +5,7 @@ import {
   ROLE_PERMISSION_MAP,
 } from '../src/common/constants/permissions.js';
 import { DEFAULT_PLANS } from '../src/modules/billing/billing.service.js';
+import { seedDemoFixtures } from './seed-demo-data.js';
 import { seedDemoUser } from './seed-demo.js';
 
 const ROLE_NAMES: Record<string, string> = {
@@ -93,6 +94,7 @@ async function main() {
   }
 
   await seedDemoUser(prisma);
+  await seedDemoFixtures(prisma);
 }
 
 main()
